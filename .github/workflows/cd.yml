@@ -43,10 +43,10 @@ jobs:
 
       - name: Write AWS credentials file for Docker secret
         run: |
-          mkdir -p $HOME/.aws
+          mkdir -p /home/runner/.aws
           printf "[default]\naws_access_key_id=%s\naws_secret_access_key=%s\naws_session_token=%s\n" \
             "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" "$AWS_SESSION_TOKEN" \
-            > $HOME/.aws/credentials
+            > /home/runner/.aws/credentials
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
@@ -59,12 +59,12 @@ jobs:
           push: true
           platforms: linux/arm64/v8
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/anchor-tree-generator:${{ env.IMAGE_TAG }}
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/anchor-tree-generator:latest
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/page-classifier:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}/page-classifier:latest
           build-args: |
             PROCESSOR_MODEL_ID=microsoft/markuplm-base
             CLASSIFICATION_MODEL_ID=classification-hpo-1783174040-010-23bbe7ae
           secrets: |
-            aws_creds=${{ env.HOME }}/.aws/credentials
+            aws_creds=/home/runner/.aws/credentials
           cache-from: type=gha
           cache-to: type=gha,mode=max
