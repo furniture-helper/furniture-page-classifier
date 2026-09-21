@@ -34,6 +34,12 @@ class ClassificationModel:
         self.logger.info(f"Model on {device} | id2label: {self.model.config.id2label}")
 
     def classify(self, tokens: dict) -> tuple[str, float]:
+        return self.classify_batch([tokens])[0]
+
+    def classify_batch(self, batch_tokens: list[dict]) -> list[tuple[str, float]]:
+        if not batch_tokens:
+            return []
+
         device = next(self.model.parameters()).device
         model_input_keys = {
             "input_ids",
@@ -42,15 +48,23 @@ class ClassificationModel:
             "xpath_tags_seq",
             "xpath_subs_seq",
         }
-        tokens = {k: v.to(device) for k, v in tokens.items() if k in model_input_keys}
+        tokens = {
+            k: torch.cat([datum[k].to(device) for datum in batch_tokens], dim=0)
+            for k in model_input_keys
+        }
 
-        with torch.no_grad():
+        with torch.inference_mode():
             outputs = self.model(**tokens)
             logits = outputs.logits
-            predicted_class_id = logits.argmax(dim=-1).item()
-            predicted_label = self.model.config.id2label[predicted_class_id]
-            predicted_score = torch.softmax(logits, dim=-1)[0, predicted_class_id].item()
-            return predicted_label, predicted_score
+            predicted_class_ids = logits.argmax(dim=-1)
+            predicted_scores = torch.softmax(logits, dim=-1)
+
+            results: list[tuple[str, float]] = []
+            for row_idx, class_id in enumerate(predicted_class_ids.tolist()):
+                predicted_label = self.model.config.id2label[class_id]
+                predicted_score = predicted_scores[row_idx, class_id].item()
+                results.append((predicted_label, predicted_score))
+            return results
 
     def _download_model_from_s3(self, model_name: str):
         model_bucket = S3Bucket("kaneel-sagemaker-testing")

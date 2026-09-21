@@ -10,6 +10,7 @@ from threading import Lock
 class PageClassificationDataset:
 
     logger = LoggingService.get_logger("PageClassificationDataset")
+    BATCH_SIZE = 64
 
     def __init__(self, s3_bucket: S3Bucket, processor: Processor, model: ClassificationModel):
         self.s3_bucket = s3_bucket
@@ -30,14 +31,25 @@ class PageClassificationDataset:
 
     def run_inference(self):
         self.logger.info(f"Running Inference on {len(self.dataset)} pages")
+        if not self.dataset:
+            return
+
+        total = len(self.dataset)
         count = 0
-        for datum in self.dataset:
-            classification, confidence = self.model.classify(datum["tokens"])
-            datum["classification"] = classification
-            datum["confidence"] = confidence
-            datum.pop("tokens")
-            count += 1
-            self.logger.info(f"[{count}/{len(self.dataset)}] Page {datum['page'].url} classified as {classification} with confidence {confidence}")
+
+        for batch_start in range(0, total, self.BATCH_SIZE):
+            batch = self.dataset[batch_start:batch_start + self.BATCH_SIZE]
+            classifications = self.model.classify_batch([datum["tokens"] for datum in batch])
+
+            for offset, (classification, confidence) in enumerate(classifications):
+                datum = batch[offset]
+                datum["classification"] = classification
+                datum["confidence"] = confidence
+                datum.pop("tokens")
+                count += 1
+                self.logger.info(
+                    f"[{count}/{total}] Page {datum['page'].url} classified as {classification} with confidence {confidence}"
+                )
 
     def get_results(self) -> list[PageClassificationResult]:
         results = []
