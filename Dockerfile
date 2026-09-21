@@ -4,6 +4,7 @@ ARG PROCESSOR_MODEL_ID
 ARG CLASSIFICATION_MODEL_ID
 ARG S3_URI="s3://kaneel-sagemaker-testing/model-artifacts/$CLASSIFICATION_MODEL_ID/output/model.tar.gz"
 ARG AWS_REGION
+ARG HF_TOKEN
 
 ENV PROCESSOR_MODEL_ID=$PROCESSOR_MODEL_ID
 
@@ -16,8 +17,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN pip install --no-cache-dir huggingface_hub
-ENV HF_HOME=/app/.models
-RUN hf download $PROCESSOR_MODEL_ID
+ENV HF_HOME=/app/.cache/huggingface
+RUN mkdir -p /app/.models \
+    && if [ -n "$HF_TOKEN" ]; then \
+         hf download "$PROCESSOR_MODEL_ID" --token "$HF_TOKEN" --local-dir "/app/.models/$PROCESSOR_MODEL_ID"; \
+       else \
+         hf download "$PROCESSOR_MODEL_ID" --local-dir "/app/.models/$PROCESSOR_MODEL_ID"; \
+       fi
 
 RUN apt-get update && apt-get install -y awscli tar && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=secret,id=aws_access_key_id \
@@ -39,6 +45,9 @@ RUN python -m pip install --upgrade pip \
 # Copy source
 COPY src /app/src
 
+# Run from /app/src so config.get_models_dir() -> "../.models" resolves to /app/.models
+WORKDIR /app/src
+
 # Create writable runtime dirs used by the script
 RUN mkdir -p /app/.cache /app/tmp \
     && useradd --create-home --shell /bin/bash appuser \
@@ -46,4 +55,4 @@ RUN mkdir -p /app/.cache /app/tmp \
 
 USER appuser
 
-CMD ["python", "src/main.py"]
+CMD ["python", "main.py"]
