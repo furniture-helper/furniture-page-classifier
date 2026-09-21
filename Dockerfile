@@ -20,9 +20,14 @@ ENV HF_HOME=/app/.models
 RUN hf download $PROCESSOR_MODEL_ID
 
 RUN apt-get update && apt-get install -y awscli tar && rm -rf /var/lib/apt/lists/*
-RUN --mount=type=secret,id=aws_creds,target=/root/.aws/credentials \
+RUN --mount=type=secret,id=aws_access_key_id \
+    --mount=type=secret,id=aws_secret_access_key \
+    --mount=type=secret,id=aws_session_token \
     mkdir -p /app/.models \
-    && aws s3 cp $S3_URI /app/.models/model.tar.gz \
+    && AWS_ACCESS_KEY_ID=$(cat /run/secrets/aws_access_key_id) \
+    AWS_SECRET_ACCESS_KEY=$(cat /run/secrets/aws_secret_access_key) \
+    AWS_SESSION_TOKEN=$(cat /run/secrets/aws_session_token) \
+    aws s3 cp $S3_URI /app/.models/model.tar.gz \
     && tar -xzf /app/.models/model.tar.gz -C /app/.models \
     && rm /app/.models/model.tar.gz
 
