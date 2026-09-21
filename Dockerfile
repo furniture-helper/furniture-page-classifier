@@ -33,9 +33,9 @@ RUN --mount=type=secret,id=aws_access_key_id \
     && AWS_ACCESS_KEY_ID=$(cat /run/secrets/aws_access_key_id) \
     AWS_SECRET_ACCESS_KEY=$(cat /run/secrets/aws_secret_access_key) \
     AWS_SESSION_TOKEN=$(cat /run/secrets/aws_session_token) \
-    aws s3 cp $S3_URI /app/.models/model.tar.gz \
-    && tar -xzf /app/.models/model.tar.gz -C /app/.models \
-    && rm /app/.models/model.tar.gz
+    aws s3 cp $S3_URI /app/.models/$CLASSIFICATION_MODEL_ID/model.tar.gz \
+    && tar -xzf /app/.models/$CLASSIFICATION_MODEL_ID/model.tar.gz -C /app/.models/$CLASSIFICATION_MODEL_ID \
+    && rm /app/.models/$CLASSIFICATION_MODEL_ID/model.tar.gz
 
 # Install dependencies first for better layer caching
 COPY src/requirements.txt /app/requirements.txt
