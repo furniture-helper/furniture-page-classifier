@@ -1,4 +1,5 @@
 import config
+from custom_types.PageClassificationResult import PageClassificationResult
 from models.Page import Page
 from services.PostgresConnector import PostgresConnector
 
@@ -23,7 +24,7 @@ def get_unclassified_pages(postgres: PostgresConnector) -> list[Page]:
 
     return pages
 
-def update_page_classifications_batch(postgres_connector: PostgresConnector, results: list):
+def update_page_classifications_batch(postgres_connector: PostgresConnector, results: list[PageClassificationResult]):
     query = """
         INSERT INTO page_classifications (url, s3_key, type, last_classified_at, created_at, updated_at)
         VALUES %s

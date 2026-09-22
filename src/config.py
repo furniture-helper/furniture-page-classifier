@@ -1,6 +1,6 @@
 import os
 
-DEFAULT_PAGE_RETRIEVAL = 100
+DEFAULT_PAGE_RETRIEVAL = 5
 
 def get_page_retrieval_count() -> int:
     count = os.environ.get("PAGE_RETRIEVAL_COUNT")

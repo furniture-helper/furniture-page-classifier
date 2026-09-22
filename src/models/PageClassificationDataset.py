@@ -58,6 +58,7 @@ class PageClassificationDataset:
                 url=datum["page"].url,
                 s3_key=datum["page"].s3_key,
                 classification=datum["classification"],
+                confidence=datum["confidence"]
             )
             results.append(res)
         return results
