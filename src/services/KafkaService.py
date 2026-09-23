@@ -44,4 +44,5 @@ class ClassificationEvent:
             "domain": get_domain_from_url(self.url),
             "classification": self.classification,
             "confidence": self.confidence,
+            "source": "ecs_classifier"
         }
