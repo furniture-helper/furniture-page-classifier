@@ -10,7 +10,7 @@ def get_unclassified_pages(postgres: PostgresConnector) -> list[Page]:
         FROM minimized_pages
             LEFT JOIN page_classifications ON minimized_pages.url = page_classifications.url
             LEFT JOIN pages ON minimized_pages.url = pages.url
-        WHERE (page_classifications.last_classified_at < minimized_pages.last_minimized_at AND page_classifications.last_classified_at < pages.last_crawled_at)
+        WHERE (page_classifications.last_classified_at < minimized_pages.last_minimized_at AND page_classifications.last_classified_at < pages.last_crawled_at - INTERVAL '5 minutes')
            OR page_classifications.last_classified_at IS NULL
         ORDER BY minimized_pages.last_minimized_at ASC, minimized_pages.url ASC, minimized_pages.s3_key ASC
         LIMIT %s
